@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: 'AIzaSyB-aTYN0MwC8VxBh-AfJEVpI5HRbiHSsr8' });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API });
 
 export const analyzeDocument = async (title: string, subject: string, content: string) => {
     const prompt = `
