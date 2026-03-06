@@ -3,49 +3,54 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { NextAuthOptions } from "next-auth";
 import UserModel from "@/models/User";
 import { dbConnect } from "@/lib/DB";
+import bcrypt from "bcryptjs";
 
 
-export const authOptions:NextAuthOptions = {
+export const authOptions: NextAuthOptions = {
     providers: [
-      CredentialsProvider({
+        CredentialsProvider({
 
-        id:"credentials",
-        name: "Credentials",
+            id: "credentials",
+            name: "Credentials",
 
-        credentials: {
-          email: { label: "Email", type: "email" },
-          password: { label: "Password", type: "password" }
-        },
+            credentials: {
+                email: { label: "Email", type: "email" },
+                password: { label: "Password", type: "password" }
+            },
 
-        async authorize(credentials, req) {
+            async authorize(credentials: any) {
 
-            await dbConnect();
-
-            try {
-                const user = await UserModel.findOne({email:credentials?.email,password:credentials?.password})
-        
-                if (!user) {
-                    throw new Error("Invalid credentials");
+                try {                    
+                    await dbConnect();
+                    const user = await UserModel.findOne({ email: credentials?.email })
+                    if (!user) {
+                        throw new Error("Invalid Credentials!");
+                    }
+                    const passwordMatch = await bcrypt.compare(credentials.password, user.password);
+                    if (passwordMatch) {
+                        return user;
+                    } else {
+                        throw new Error("Incorrect Password!");
+                    }
                 } 
-                return user
-
-            } catch (error:any) {
-                throw new Error(error.message);
+                catch (error: any) {
+                    console.log(error.message);
+                    throw new Error(error.message);
+                }
             }
-        }
-      })
+        })
     ],
-    callbacks:{
-        async jwt({token,user}){
+    callbacks: {
+        async jwt({ token, user }) {
 
-            if(user){
+            if (user) {
                 token.id = user.id;
                 token.email = user.email;
                 token.name = user.name;
             }
             return token;
         },
-        async session({session,token}){
+        async session({ session, token }) {
 
             if (token) {
                 session.user.id = token.id as string;
@@ -55,13 +60,13 @@ export const authOptions:NextAuthOptions = {
             return session;
         }
     },
-    pages:{
-        signIn:'sign-in'
+    pages: {
+        signIn: 'sign-in'
     },
-    session:{
-        strategy:'jwt'
+    session: {
+        strategy: 'jwt'
     },
-    secret:process.env.NEXTAUTH_SECRET
+    secret: process.env.NEXTAUTH_SECRET
 }
 
 export default NextAuth(authOptions)
