@@ -3,6 +3,7 @@ import "./globals.css";
 import AuthProvider from "@/context/AuthProvider";
 import { Toaster } from "@/components/ui/sonner"
 import Nav from "@/components/Nav";
+import { QuizState } from "@/context/quizContext";
 
 export const metadata: Metadata = {
   title: "Study Companion",
@@ -15,15 +16,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+        <QuizState>
     <html lang="en">
       <AuthProvider>
-        <body>
-          <Nav/>
-          {children}
-          <Toaster />
-        </body>
-
+          <body>
+            <Nav />
+            {children}
+            <Toaster />
+          </body>
       </AuthProvider>
     </html>
+        </QuizState>
   );
 }

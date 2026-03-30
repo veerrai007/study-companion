@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { join } from 'path'
 import { writeFile } from "fs/promises";
 import documentProcessor from "@/services/documentProcessor";
@@ -11,11 +11,20 @@ import mongoose from "mongoose";
 
 export async function POST(request: NextRequest) {
 
-    const session = await getServerSession(authOptions)
-    const user = session?.user.id
-    const mongooseID = new mongoose.Types.ObjectId(user)
-
     try {
+
+        const session = await getServerSession(authOptions)
+        const user = session?.user.id
+        if(!user){
+            return Response.json(
+                {
+                    success: false,
+                    message: "Unauthorized",
+                },
+                { status: 401 }
+            )
+        }
+        const mongooseID = new mongoose.Types.ObjectId(user)
 
         await dbConnect();
         const formData = await request.formData();
@@ -36,14 +45,12 @@ export async function POST(request: NextRequest) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        const uploadDir = join(process.cwd(), 'public', 'uploads');
-        const filePath = join(uploadDir, file.name);
+        const uploadDir = require('os').tmpdir();
+        const filePath = join(uploadDir, `${Date.now()}-${file.name}`);
 
         await writeFile(filePath, buffer);
 
         const fileType = documentProcessor.getFileType(file.type)
-
-
 
         const document = new DocumentModel({
             user: mongooseID,
@@ -54,7 +61,7 @@ export async function POST(request: NextRequest) {
         })
         await document.save();
 
-        backgroundProcess(document._id)
+        after(() => backgroundProcess(document._id));
 
         return Response.json(
             {
@@ -89,7 +96,7 @@ async function backgroundProcess(documentId: typeof mongoose.Types.ObjectId) {
         
         await DocumentModel.findByIdAndUpdate(documentId, {
           content:content,
-          summery: analysis.summary,
+          summary: analysis.summary,
           keyPoints: analysis.keyPoints,
           topics: analysis.topics,
           isProcessed:true

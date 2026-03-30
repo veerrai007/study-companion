@@ -45,14 +45,17 @@ const userSchema = new mongoose.Schema({
       enum: ['free', 'premium'],
       default: 'free'
     },
-    expiresAt: Date
+    expiresAt: {
+      type: Date,
+      default: null
+    }
   }
 }, {
   timestamps: true
 });
 
 // Hash password before saving
-userSchema.pre('save', async function() {
+userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
 
   try {
@@ -64,12 +67,12 @@ userSchema.pre('save', async function() {
 });
 
 // Remove password from JSON output
-userSchema.methods.toJSON = function() {
+userSchema.methods.toJSON = function () {
   const userObject = this.toObject();
   delete userObject.password;
   return userObject;
 };
 
-const UserModel = mongoose.models.User ||  mongoose.model('User', userSchema);
+const UserModel = mongoose.models.User || mongoose.model('User', userSchema);
 
 export default UserModel;

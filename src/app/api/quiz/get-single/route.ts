@@ -8,18 +8,18 @@ import QuizModel from "@/models/Quiz";
 export async function GET(request: NextRequest) {
 
     try {
+        
         await dbConnect();
 
         const param = request.nextUrl.searchParams.get('id');
 
-        const session = await getServerSession(authOptions);
-        const userId = session?.user.id;
-        const user = new mongoose.Types.ObjectId(userId);
+        // const session = await getServerSession(authOptions);
+        // const userId = session?.user.id;
+        // const user = new mongoose.Types.ObjectId(userId);
 
         const quiz = await QuizModel.findOne({
-            _id: param,
-            user
-        }).populate('document', 'topic subject');
+            _id: param
+        });
 
         if (!quiz) {
             return Response.json({
@@ -43,7 +43,9 @@ export async function GET(request: NextRequest) {
 
         return Response.json({
             success: true,
-            quiz: quizForTaking
+            data: {
+                quiz: quizForTaking
+            }
         }, { status: 200 })
     }
     catch (error) {

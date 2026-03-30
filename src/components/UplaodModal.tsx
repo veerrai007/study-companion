@@ -15,12 +15,18 @@ import { UploadDocumentSchema } from "@/schema/UploadDocumentSchema"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
 import z from "zod"
-import ApiResponse from "@/types/ApiResponse"
 import { useState } from "react"
 import { toast } from "sonner"
 
 
-export default function UploadModal() {
+interface UploadModalProps {
+  onUploadSuccess?: (doc: any) => void;
+  onProcessSuccess?: (doc: any) => void;
+  text?: string;
+  style?: string;
+}
+
+export default function UploadModal({ onUploadSuccess, onProcessSuccess, text, style }: UploadModalProps = {}) {
 
   const [open, setOpen] = useState(false);
 
@@ -34,31 +40,57 @@ export default function UploadModal() {
 
   async function onSubmit(data: z.infer<typeof UploadDocumentSchema>) {
 
+    setOpen(false);
     const formData = new FormData()
     formData.append("title", data.topic)
     formData.append("subject", data.subject)
     formData.append('document', data.document)
 
     try {
-      const res = await fetch('http://localhost:3000/api/upload', {
-        headers: {
-          contentType: 'application/json'
-        },
+      const uploadToastId = toast.loading("Uploading Document...", { position: "top-right" });
+
+      const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData
       })
-      const result: ApiResponse = await res.json()
-      if (result.success) {
-        toast.success(result.message,{richColors: true, position: 'top-center'})
-      }else{
-        toast.warning(result.message,{description:"Please try again",richColors: true, position: 'top-center'})
+      const result: any = await res.json()
+
+      if (result?.success) {
+        toast.success(result?.message || "Document Uploaded", { id: uploadToastId });
+
+        if (onUploadSuccess && result.data) {
+          onUploadSuccess(result.data);
+        }
+
+        // --- Start Polling for Processing Status ---
+        const docId = result.data?._id;
+        if (docId) {
+          const processToastId = toast.loading("Processing Document...", { position: "top-right" });
+
+          const pollInterval = setInterval(async () => {
+            try {
+              const statusRes = await fetch(`/api/status?id=${docId}`);
+              const statusData = await statusRes.json();
+
+              if (statusData?.data?.isProcessed) {
+                clearInterval(pollInterval);
+                toast.success("Document Processed Successfully!", { id: processToastId, duration: 5000 });
+                if (onProcessSuccess && statusData.data.document) {
+                  onProcessSuccess(statusData.data.document);
+                }
+              }
+            } catch (err) {
+              clearInterval(pollInterval);
+              toast.error("Failed to check processing status.", { id: processToastId });
+            }
+          }, 4000); // Check every 4 seconds
+        }
+
+      } else {
+        toast.error(result?.message || "Upload Failed", { id: uploadToastId });
       }
-    }
-    catch (error: any) {
-      toast.error('Something went wrong!', { description: error?.message, richColors: true, position: 'top-center' })
-    }
-    finally {
-      setOpen(false);
+    } catch (error: any) {
+      toast.error("Error: Bad Request!", { position: "top-right" });
     }
   }
 
@@ -66,9 +98,9 @@ export default function UploadModal() {
     <Dialog open={open} onOpenChange={setOpen}>
       <form id="upload-form" onSubmit={form.handleSubmit(onSubmit)}>
         <DialogTrigger asChild>
-          <Button onClick={() => setOpen(true)} variant="outline">Upload Document</Button>
+          <Button onClick={() => setOpen(true)} variant="outline" className={style}>{text}</Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Upload A Document</DialogTitle>
           </DialogHeader>

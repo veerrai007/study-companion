@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const questionSchema = new mongoose.Schema({
+export const questionSchema = new mongoose.Schema({
   question: {
     type: String,
     required: true
@@ -15,7 +15,7 @@ const questionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  explanation: String,
+  explanation: { type: String },
   difficulty: {
     type: String,
     enum: ['easy', 'medium', 'hard'],
@@ -25,7 +25,9 @@ const questionSchema = new mongoose.Schema({
     type: Number,
     default: 1
   },
-  topic: String // Which topic/section this question covers
+  topic: { 
+    type: String 
+  } // Which topic/section this question covers
 });
 
 export const quizSchema = new mongoose.Schema({
@@ -44,11 +46,14 @@ export const quizSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  description: String,
-  subject: String,
-  
+  description: {
+    type: String
+  },
+  subject: {
+    type: String
+  },
   questions: [questionSchema],
-  
+
   // Quiz attempts/results
   attempts: [{
     attemptNumber: Number,
@@ -68,17 +73,17 @@ export const quizSchema = new mongoose.Schema({
     timeSpent: Number, // total time in seconds
     feedback: String // AI-generated feedback
   }],
-  
+
   // Analytics
   totalAttempts: { type: Number, default: 0 },
   averageScore: { type: Number, default: 0 },
   bestScore: { type: Number, default: 0 },
-  
+
   isActive: { type: Boolean, default: true }
 }, {
   timestamps: true
 });
 
-const QuizModel = mongoose.models.Quiz || mongoose.model('Quiz', quizSchema)
+const QuizModel = mongoose.models.Quiz || mongoose.model('Quiz', quizSchema);
 
 export default QuizModel;

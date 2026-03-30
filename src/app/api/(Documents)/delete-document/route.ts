@@ -2,11 +2,11 @@ import mongoose from "mongoose";
 import { getServerSession } from "next-auth";
 import { NextRequest } from "next/server";
 import { authOptions } from "../../auth/[...nextauth]/options";
-import DocumentModel from "@/models/Document";
 import { dbConnect } from "@/lib/DB";
+import DocumentModel from "@/models/Document";
+import QuizModel from "@/models/Quiz";
 
-
-export async function GET(request: NextRequest) {
+export async function DELETE(request: NextRequest) {
 
     try {
 
@@ -23,16 +23,15 @@ export async function GET(request: NextRequest) {
         const mongooseID = new mongoose.Types.ObjectId(user);
 
         const param = request.nextUrl.searchParams.get('id');
-        // if (param) {
-        //     const documentID = new mongoose.Types.ObjectId(param);
-        // }
 
+        if (!param) {
+            return Response.json({
+                success: false,
+                message: "No document id",
+            }, { status: 400 })
+        }
 
-        const document = await DocumentModel.findOneAndUpdate(
-            { user: mongooseID, _id: param },
-            { $inc: { accessCount: 1 } },
-            { new: true }
-        );
+        const document = await DocumentModel.findOne({ user: mongooseID, _id: param });
 
         if (!document) {
             return Response.json({
@@ -41,20 +40,22 @@ export async function GET(request: NextRequest) {
             }, { status: 400 })
         }
 
-        
+        await QuizModel.deleteMany({ document: document._id });
+
+        await document.deleteOne();
 
         return Response.json({
             success: true,
-            message: "Document Fetched",
-            data: {
-                documentt: document
-            }
+            message: "Document deleted successfully",
         }, { status: 200 })
-    }
-    catch (error) {
+
+    } catch (error) {
+        console.log(error);
         return Response.json({
             success: false,
-            message: "Failed to fetch",
+            message: "Failed to delete document",
         }, { status: 500 })
     }
+
+
 }

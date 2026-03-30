@@ -21,13 +21,15 @@ export const documentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    originalFileName: String,
+    originalFileName: {
+        type: String
+    },
     fileType: {
         type: String,
         enum: ['pdf', 'txt', 'docx', 'image'],
         required: true
     },
-    summery: {
+    summary: {
         type: String
     },
     keyPoints: {
@@ -49,12 +51,16 @@ export const documentSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    lastAccessed: Date,
+    lastAccessed: {
+        type: Date
+    },
     isProcessed: {
         type: Boolean,
         default: false
     },
-    processingError: String,
+    processingError: {
+        type: String
+    },
     quizzes: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Quiz'
@@ -63,6 +69,8 @@ export const documentSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Flashcard'
     }],
+}, {
+    timestamps: true
 })
 
 const DocumentModel = mongoose.models.Document || mongoose.model('Document', documentSchema)

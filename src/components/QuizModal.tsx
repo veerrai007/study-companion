@@ -11,6 +11,7 @@ import { Button } from "./ui/button"
 import { FieldGroup } from "./ui/field"
 import { useState } from "react"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 type Props = {
     id: string
@@ -18,6 +19,7 @@ type Props = {
 
 export default function GenerateQuiz({ id }: Props) {
 
+    const router = useRouter();
     const [open, setOpen] = useState(false);
     const [count, setCount] = useState("5");
     const [difficulty, setDifficulty] = useState("easy");
@@ -33,12 +35,13 @@ export default function GenerateQuiz({ id }: Props) {
         toast.promise(
             () => new Promise<{ value: string }>(async (resolve, reject) => {
                 try {
-                    const res = await fetch('http://localhost:3000/api/generate-quiz', {
+                    const res = await fetch('/api/quiz/generate', {
                         method: 'POST',
                         body: formData
                     })
                     const result = await res.json();
                     if (result.success) {
+                        router.push(`/quizzes/${id}`)
                         resolve({ value: result.message })
                     } else {
                         reject({ value: result.message })

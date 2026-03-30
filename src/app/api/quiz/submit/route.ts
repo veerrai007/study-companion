@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
         await quiz.save();
 
-        const results = {
+        const result = {
             score: attempt.score,
             timeSpent: attempt.timeSpent,
             feedback: attempt.feedback,
@@ -107,8 +107,10 @@ export async function POST(request: NextRequest) {
         return Response.json({
             success: true,
             message: 'Quiz completed successfully',
-            results,
-            attempt: attempt.attemptNumber
+            data:{ 
+                result,
+                attempt: attempt.attemptNumber
+            }
         }, { status: 200 })
 
 
